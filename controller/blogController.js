@@ -28,6 +28,25 @@ export const addBlog = async (req, res) => {
     }
 };
 
+// Get a single blog
+export const getSingleBlog = async (req, res) => {
+    try {
+        const blogId = req.params.id;
+        const blogRef = blogCollection.doc(blogId);
+        const blogSnapshot = await blogRef.get();
+
+        if (!blogSnapshot.exists) {
+            return res.status(404).json({ error: "Blog not found" });
+        }
+        res.status(200).json({
+            id: blogSnapshot.id,
+            ...blogSnapshot.data(),
+        });
+    } catch (error) {
+        console.error("Error fetching blogs:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+}
 // Get all blogs
 export const getBlogs = async (req, res) => {
     try {

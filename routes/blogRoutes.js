@@ -1,11 +1,12 @@
 import express from "express";
-import { addBlog, getBlogs, deleteBlog, updateBlog } from "../controller/blogController.js";
+import { addBlog, getBlogs, deleteBlog, updateBlog, getSingleBlog } from "../controller/blogController.js";
 import { verifyToken } from "../middleware/auth.js";
 
 const router = express.Router();
 
 // Public
 router.get("/", getBlogs);
+router.get("/:id", getSingleBlog);
 
 // Protected
 router.post("/create-blog", verifyToken, addBlog);
