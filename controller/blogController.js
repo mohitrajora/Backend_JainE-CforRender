@@ -12,13 +12,14 @@ export const addBlog = async (req, res) => {
             return res.status(400).json({ error: "All fields are required" });
         }
 
-        // Create slug from title
+        // Create clean slug from title
         const slug = title
             .toLowerCase()
             .trim()
-            .replace(/[^\w\s-]/g, "") // remove special characters
-            .replace(/\s+/g, "-") // spaces to hyphens
-            .replace(/-+/g, "-"); // remove duplicate hyphens
+            .replace(/[^\w\s-]/g, "") // remove special chars
+            .replace(/\s+/g, "-")     // spaces to hyphens
+            .replace(/-+/g, "-")      // collapse multiple hyphens
+            .replace(/^-+|-+$/g, ""); // remove leading/trailing hyphens
 
         const newBlog = {
             title,
