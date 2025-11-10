@@ -6,6 +6,7 @@ const router = express.Router();
 
 // Public
 router.get("/", getBlogs);
+router.get("/slug/:slug", getBlogBySlug);
 router.get("/:id", getSingleBlog);
 
 // Protected

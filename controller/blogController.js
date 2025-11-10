@@ -71,6 +71,24 @@ export const getBlogs = async (req, res) => {
     }
 };
 
+// Get blog by slug
+export const getBlogBySlug = async (req, res) => {
+    try {
+        const { slug } = req.params;
+        const snapshot = await blogCollection.where("slug", "==", slug).get();
+
+        if (snapshot.empty) {
+            return res.status(404).json({ error: "Blog not found" });
+        }
+
+        const blogDoc = snapshot.docs[0];
+        res.status(200).json({ id: blogDoc.id, ...blogDoc.data() });
+    } catch (error) {
+        console.error("Error fetching blog by slug:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+};
+
 // Delete a blog
 export const deleteBlog = async (req, res) => {
     try {
