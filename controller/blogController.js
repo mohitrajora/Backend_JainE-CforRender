@@ -12,10 +12,19 @@ export const addBlog = async (req, res) => {
             return res.status(400).json({ error: "All fields are required" });
         }
 
+        // Create slug from title
+        const slug = title
+            .toLowerCase()
+            .trim()
+            .replace(/[^\w\s-]/g, "") // remove special characters
+            .replace(/\s+/g, "-") // spaces to hyphens
+            .replace(/-+/g, "-"); // remove duplicate hyphens
+
         const newBlog = {
             title,
             category,
             content,
+            slug,
             createdAt: new Date().toISOString(),
         };
 
