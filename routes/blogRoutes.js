@@ -1,5 +1,5 @@
 import express from "express";
-import { addBlog, getBlogs, deleteBlog, updateBlog, getSingleBlog } from "../controller/blogController.js";
+import { addBlog, getBlogs, deleteBlog, updateBlog, getSingleBlog, getBlogBySlug } from "../controller/blogController.js";
 import { verifyToken } from "../middleware/auth.js";
 
 const router = express.Router();
