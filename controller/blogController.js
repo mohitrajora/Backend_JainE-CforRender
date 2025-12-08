@@ -6,32 +6,33 @@ const blogCollection = db.collection("blogs");
 // Add a new blog
 export const addBlog = async (req, res) => {
     try {
-        const { title, category, content } = req.body;
+        const { title, category, content, metaTitle, metaDescription } = req.body;
 
         if (!title || !category || !content) {
             return res.status(400).json({ error: "All fields are required" });
         }
 
-        // Create clean slug from title
+        // create slug safely (trim leading/trailing hyphens)
         const slug = title
             .toLowerCase()
             .trim()
-            .replace(/[^\w\s-]/g, "") // remove special chars
-            .replace(/\s+/g, "-")     // spaces to hyphens
-            .replace(/-+/g, "-")      // collapse multiple hyphens
-            .replace(/^-+|-+$/g, ""); // remove leading/trailing hyphens
+            .replace(/[^\w\s-]/g, "")
+            .replace(/\s+/g, "-")
+            .replace(/-+/g, "-")
+            .replace(/^-+|-+$/g, "");
 
         const newBlog = {
             title,
             category,
             content,
             slug,
+            metaTitle: metaTitle || title, // default to title if not provided
+            metaDescription: metaDescription || (content ? content.slice(0, 150) : ""),
             createdAt: new Date().toISOString(),
         };
 
         const docRef = await blogCollection.add(newBlog);
         res.status(201).json({ id: docRef.id, ...newBlog });
-
     } catch (error) {
         console.error("Error adding blog:", error);
         res.status(500).json({ error: "Internal Server Error" });
@@ -102,29 +103,35 @@ export const deleteBlog = async (req, res) => {
     }
 };
 
-// Update a blog
+// Update Blog
 export const updateBlog = async (req, res) => {
-    try {
-        const blogId = req.params.id;
-        const { title, category, content } = req.body;
+  try {
+    const blogId = req.params.id;
+    const { title, category, content, metaTitle, metaDescription } = req.body;
 
-        const blogRef = blogCollection.doc(blogId);
-        const blogSnapshot = await blogRef.get();
-
-        if (!blogSnapshot.exists) {
-            return res.status(404).json({ error: "Blog not found" });
-        }
-
-        await blogRef.update({
-            title,
-            category,
-            content,
-            updatedAt: new Date().toISOString(),
-        });
-
-        res.status(200).json({ message: "Blog updated successfully" });
-    } catch (error) {
-        console.error("Error updating blog:", error);
-        res.status(500).json({ error: "Internal Server Error" });
+    const blogRef = blogCollection.doc(blogId);
+    const blogSnapshot = await blogRef.get();
+    if (!blogSnapshot.exists) {
+      return res.status(404).json({ error: "Blog not found" });
     }
+
+    const updateData = {
+      title,
+      category,
+      content,
+      updatedAt: new Date().toISOString(),
+    };
+
+    if (metaTitle !== undefined) updateData.metaTitle = metaTitle;
+    if (metaDescription !== undefined) updateData.metaDescription = metaDescription;
+
+    // If title changed, optionally update slug (you may want to avoid auto-changing slug for published posts)
+    // updateData.slug = title ? createSlug(title) : currentSlug;
+
+    await blogRef.update(updateData);
+    res.status(200).json({ message: "Blog updated successfully" });
+  } catch (error) {
+    console.error("Error updating blog:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 };
