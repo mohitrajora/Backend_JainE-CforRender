@@ -136,21 +136,22 @@ export const updateBlog = async (req, res) => {
     }
 };
 
-exports.generateSitemap = async (req, res) => {
+export const generateSitemap = async (req, res) => {
     try {
-        // Get all blog slugs
-        const blogs = await Blog.find({}, "slug updatedAt");
+        const snapshot = await blogCollection.get();
 
-        // Convert blogs to XML
-        const blogUrls = blogs.map(blog => `
-      <url>
-        <loc>https://jain-events-and-caterers.netlify.app/blog/${blog.slug}</loc>
-        <lastmod>${new Date(blog.updatedAt).toISOString()}</lastmod>
-        <priority>0.85</priority>
-      </url>
-    `).join("");
+        const blogUrls = snapshot.docs.map(doc => {
+            const data = doc.data();
+            if (!data.slug) return "";
 
-        // Full sitemap
+            return `
+  <url>
+    <loc>https://jain-events-and-caterers.netlify.app/blog/${data.slug}</loc>
+    <lastmod>${data.updatedAt || data.createdAt}</lastmod>
+    <priority>0.85</priority>
+  </url>`;
+        }).join("");
+
         const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 
@@ -178,12 +179,11 @@ exports.generateSitemap = async (req, res) => {
 
 </urlset>`;
 
-        // Send XML
         res.set("Content-Type", "application/xml");
         res.status(200).send(sitemap);
 
     } catch (error) {
-        console.error("Sitemap Error:", error);
+        console.error("Sitemap generation error:", error);
         res.status(500).send("Error generating sitemap");
     }
 };
