@@ -105,33 +105,85 @@ export const deleteBlog = async (req, res) => {
 
 // Update Blog
 export const updateBlog = async (req, res) => {
-  try {
-    const blogId = req.params.id;
-    const { title, category, content, metaTitle, metaDescription } = req.body;
+    try {
+        const blogId = req.params.id;
+        const { title, category, content, metaTitle, metaDescription } = req.body;
 
-    const blogRef = blogCollection.doc(blogId);
-    const blogSnapshot = await blogRef.get();
-    if (!blogSnapshot.exists) {
-      return res.status(404).json({ error: "Blog not found" });
+        const blogRef = blogCollection.doc(blogId);
+        const blogSnapshot = await blogRef.get();
+        if (!blogSnapshot.exists) {
+            return res.status(404).json({ error: "Blog not found" });
+        }
+
+        const updateData = {
+            title,
+            category,
+            content,
+            updatedAt: new Date().toISOString(),
+        };
+
+        if (metaTitle !== undefined) updateData.metaTitle = metaTitle;
+        if (metaDescription !== undefined) updateData.metaDescription = metaDescription;
+
+        // If title changed, optionally update slug (you may want to avoid auto-changing slug for published posts)
+        // updateData.slug = title ? createSlug(title) : currentSlug;
+
+        await blogRef.update(updateData);
+        res.status(200).json({ message: "Blog updated successfully" });
+    } catch (error) {
+        console.error("Error updating blog:", error);
+        res.status(500).json({ error: "Internal Server Error" });
     }
+};
 
-    const updateData = {
-      title,
-      category,
-      content,
-      updatedAt: new Date().toISOString(),
-    };
+exports.generateSitemap = async (req, res) => {
+    try {
+        // Get all blog slugs
+        const blogs = await Blog.find({}, "slug updatedAt");
 
-    if (metaTitle !== undefined) updateData.metaTitle = metaTitle;
-    if (metaDescription !== undefined) updateData.metaDescription = metaDescription;
+        // Convert blogs to XML
+        const blogUrls = blogs.map(blog => `
+      <url>
+        <loc>https://jain-events-and-caterers.netlify.app/blog/${blog.slug}</loc>
+        <lastmod>${new Date(blog.updatedAt).toISOString()}</lastmod>
+        <priority>0.85</priority>
+      </url>
+    `).join("");
 
-    // If title changed, optionally update slug (you may want to avoid auto-changing slug for published posts)
-    // updateData.slug = title ? createSlug(title) : currentSlug;
+        // Full sitemap
+        const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 
-    await blogRef.update(updateData);
-    res.status(200).json({ message: "Blog updated successfully" });
-  } catch (error) {
-    console.error("Error updating blog:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
+  <url>
+    <loc>https://jain-events-and-caterers.netlify.app/</loc>
+    <priority>1.00</priority>
+  </url>
+
+  <url>
+    <loc>https://jain-events-and-caterers.netlify.app/about</loc>
+    <priority>0.80</priority>
+  </url>
+
+  <url>
+    <loc>https://jain-events-and-caterers.netlify.app/services</loc>
+    <priority>0.90</priority>
+  </url>
+
+  <url>
+    <loc>https://jain-events-and-caterers.netlify.app/blog</loc>
+    <priority>0.85</priority>
+  </url>
+
+  ${blogUrls}
+
+</urlset>`;
+
+        // Send XML
+        res.set("Content-Type", "application/xml");
+        res.status(200).send(sitemap);
+
+    } catch (error) {
+        console.error("Sitemap Error:", error);
+        res.status(500).send("Error generating sitemap");
+    }
 };

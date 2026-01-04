@@ -1,10 +1,13 @@
 import express from "express";
-import { addBlog, getBlogs, deleteBlog, updateBlog, getSingleBlog, getBlogBySlug } from "../controller/blogController.js";
+import {
+    addBlog, getBlogs, deleteBlog, updateBlog, getSingleBlog, getBlogBySlug, generateSitemap
+} from "../controller/blogController.js";
 import { verifyToken } from "../middleware/auth.js";
 
 const router = express.Router();
 
 // Public
+router.get("/sitemap.xml", generateSitemap);
 router.get("/", getBlogs);
 router.get("/slug/:slug", getBlogBySlug);
 router.get("/:id", getSingleBlog);
