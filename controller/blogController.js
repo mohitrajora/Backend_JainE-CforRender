@@ -223,3 +223,52 @@ ${blogUrls}
         res.status(500).send("Error generating sitemap");
     }
 };
+
+// Get related blogs
+export const getRelatedBlogs = async (req, res) => {
+    try {
+        const { slug } = req.params;
+
+        // 1. Get current blog
+        const currentSnapshot = await blogCollection
+            .where("slug", "==", slug)
+            .limit(1)
+            .get();
+
+        if (currentSnapshot.empty) {
+            return res.status(404).json({ error: "Blog not found" });
+        }
+
+        const currentBlog = currentSnapshot.docs[0].data();
+
+        // 2. Get related blogs (same category, exclude current)
+        let relatedQuery = await blogCollection
+            .where("category", "==", currentBlog.category)
+            .get();
+
+        let relatedBlogs = relatedQuery.docs
+            .map(doc => ({ id: doc.id, ...doc.data() }))
+            .filter(blog => blog.slug !== slug)
+            .slice(0, 3);
+
+        // 3. Fallback: latest blogs if less than 3
+        if (relatedBlogs.length < 3) {
+            const latestSnapshot = await blogCollection
+                .orderBy("createdAt", "desc")
+                .limit(3)
+                .get();
+
+            const latestBlogs = latestSnapshot.docs
+                .map(doc => ({ id: doc.id, ...doc.data() }))
+                .filter(blog => blog.slug !== slug);
+
+            relatedBlogs = [...new Set([...relatedBlogs, ...latestBlogs])].slice(0, 3);
+        }
+
+        res.status(200).json(relatedBlogs);
+
+    } catch (error) {
+        console.error("Related blogs error:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+};
