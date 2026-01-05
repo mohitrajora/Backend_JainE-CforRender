@@ -271,4 +271,58 @@ export const getRelatedBlogs = async (req, res) => {
         console.error("Related blogs error:", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
+}; export const getRelatedBlogs = async (req, res) => {
+    try {
+        const { slug } = req.params;
+
+        // 1️⃣ Get current blog
+        const currentSnapshot = await blogCollection
+            .where("slug", "==", slug)
+            .limit(1)
+            .get();
+
+        if (currentSnapshot.empty) {
+            return res.status(404).json({ error: "Blog not found" });
+        }
+
+        const currentDoc = currentSnapshot.docs[0];
+        const currentBlog = { id: currentDoc.id, ...currentDoc.data() };
+
+        // 2️⃣ Get blogs from same category
+        const categorySnapshot = await blogCollection
+            .where("category", "==", currentBlog.category)
+            .get();
+
+        let relatedBlogs = categorySnapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() }))
+            .filter(blog => blog.slug !== slug);
+
+        // 3️⃣ If less than 3, fetch latest blogs
+        if (relatedBlogs.length < 3) {
+            const latestSnapshot = await blogCollection
+                .orderBy("createdAt", "desc")
+                .limit(5)
+                .get();
+
+            const latestBlogs = latestSnapshot.docs
+                .map(doc => ({ id: doc.id, ...doc.data() }))
+                .filter(blog => blog.slug !== slug);
+
+            // 4️⃣ Merge & remove duplicates by slug
+            const merged = [...relatedBlogs, ...latestBlogs];
+
+            const uniqueBlogs = Array.from(
+                new Map(merged.map(blog => [blog.slug, blog])).values()
+            );
+
+            relatedBlogs = uniqueBlogs;
+        }
+
+        // 5️⃣ Return only top 3
+        res.status(200).json(relatedBlogs.slice(0, 3));
+
+    } catch (error) {
+        console.error("Related blogs error:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
 };
