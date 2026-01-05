@@ -138,23 +138,25 @@ export const updateBlog = async (req, res) => {
 
 export const generateSitemap = async (req, res) => {
     try {
+        // Fetch blogs from Firestore
         const snapshot = await blogCollection.get();
 
-        const blogUrls = snapshot.docs.map(doc => {
-            const data = doc.data();
-            if (!data.slug) return "";
+        const blogUrls = snapshot.docs
+            .map(doc => {
+                const data = doc.data();
+                if (!data.slug) return "";
 
-            return `
+                return `
   <url>
     <loc>https://jain-events-and-caterers.netlify.app/blog/${data.slug}</loc>
     <lastmod>${data.updatedAt || data.createdAt}</lastmod>
     <priority>0.85</priority>
   </url>`;
-        }).join("");
+            })
+            .join("");
 
-        const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-
+        // Static frontend pages (ONLY ONCE)
+        const staticPages = `
   <url>
     <loc>https://jain-events-and-caterers.netlify.app/</loc>
     <priority>1.00</priority>
@@ -171,12 +173,46 @@ export const generateSitemap = async (req, res) => {
   </url>
 
   <url>
+    <loc>https://jain-events-and-caterers.netlify.app/menu</loc>
+    <priority>0.75</priority>
+  </url>
+
+  <url>
+    <loc>https://jain-events-and-caterers.netlify.app/wedding</loc>
+    <priority>0.80</priority>
+  </url>
+
+  <url>
+    <loc>https://jain-events-and-caterers.netlify.app/birthday</loc>
+    <priority>0.80</priority>
+  </url>
+
+  <url>
+    <loc>https://jain-events-and-caterers.netlify.app/anniversary</loc>
+    <priority>0.80</priority>
+  </url>
+
+  <url>
+    <loc>https://jain-events-and-caterers.netlify.app/corporate</loc>
+    <priority>0.80</priority>
+  </url>
+
+  <url>
+    <loc>https://jain-events-and-caterers.netlify.app/contact</loc>
+    <priority>0.80</priority>
+  </url>
+
+  <url>
     <loc>https://jain-events-and-caterers.netlify.app/blog</loc>
     <priority>0.85</priority>
   </url>
+`;
 
-  ${blogUrls}
-
+        // Final sitemap XML
+        const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${staticPages}
+${blogUrls}
 </urlset>`;
 
         res.set("Content-Type", "application/xml");
