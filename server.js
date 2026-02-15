@@ -8,6 +8,7 @@ import jwt from "jsonwebtoken";
 // Import routes
 import blogRoutes from "./routes/blogRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import contactRoutes from "./routes/contactRoutes.js";
 
 dotenv.config();
 
@@ -25,6 +26,7 @@ app.use(express.json()); // Parse JSON request bodies
 // Routes
 app.use("/blogs", blogRoutes);
 app.use("/admin", authRoutes);
+app.use("/api/contact", contactRoutes);
 
 //  Middleware: verify any valid JWT (no role check)
 function verifyToken(req, res, next) {
