@@ -46,3 +46,13 @@ export const createContactMessage = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+export const getAllContactMessages = async (req, res) => {
+  try {
+    const messages = await ContactMessage.find().sort({ createdAt: -1 });
+    res.status(200).json(messages);
+  } catch (error) {
+    console.error("Fetch Contact Messages Error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
