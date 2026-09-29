@@ -269,3 +269,45 @@ export const getRelatedBlogs = async (req, res) => {
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
+
+// GENERATE SITEMAP
+
+export const generateSitemap = async (req, res) => {
+    try {
+        const snapshot = await blogCollection
+            .orderBy("createdAt", "desc")
+            .get();
+
+        const baseUrl = "https://jain-events-and-caterers.netlify.app";
+
+        const urls = [
+            `${baseUrl}/`,
+            `${baseUrl}/blog`
+        ];
+
+        snapshot.docs.forEach(doc => {
+            const blog = doc.data();
+
+            if (blog.slug) {
+                urls.push(`${baseUrl}/blog/${blog.slug}`);
+            }
+        });
+
+        const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls.map(url => `
+    <url>
+        <loc>${url}</loc>
+    </url>`).join("")}
+</urlset>`;
+
+        res.header("Content-Type", "application/xml");
+        res.status(200).send(xml);
+
+    } catch (error) {
+        console.error("Sitemap generation error:", error);
+        res.status(500).json({
+            error: "Failed to generate sitemap"
+        });
+    }
+};

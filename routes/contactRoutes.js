@@ -8,7 +8,7 @@ import jwt from "jsonwebtoken";
 
 const router = express.Router();
 
-// JWT middleware (same logic as server.js)
+// JWT middleware
 const verifyToken = (req, res, next) => {
     const authHeader = req.headers["authorization"];
     if (!authHeader) return res.status(401).json({ error: "No token provided" });
